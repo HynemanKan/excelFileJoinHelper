@@ -4,6 +4,8 @@ import xlrd
 import tablib
 
 xlrdCtypeMap = ["#","text","number","datetime"]
+openpyxlMap ={"s":"text","n":"number","d":"datetime"}
+"""
 def readXlsxFile(filePath):
     file = xlrd.open_workbook(filePath)
     table = file.sheets()[0]
@@ -29,7 +31,34 @@ def readXlsxFile(filePath):
                 lineData.append(nowRow[cellIndex].value)
         dataSet.append(lineData)
     return labels,dataSet
+"""
 
+def readXlsxFile(filePath):
+    file = openpyxl.load_workbook(filePath,data_only=True)
+    table = file.active
+    rows = [col for col in table.rows]
+    labelRow = rows[0]
+    firstRow = rows[1]
+    labels = []
+    for cellIndex in range(len(labelRow)):
+        ctpye = openpyxlMap[firstRow[cellIndex].data_type]
+        label = labelRow[cellIndex].value
+        labels.append({
+            "label": label,
+            "type": ctpye
+        })
+    dataSet = []
+    for rowIndex in range(1,table.max_row):
+        nowRow = rows[rowIndex]
+        lineData=[]
+        for cellIndex in range(len(labels)):
+            if labels[cellIndex]["type"]=="datetime":
+                dtValue = nowRow[cellIndex].value
+                lineData.append(dtValue.strftime("%Y-%m-%d %H:%M:%S"))
+            else:
+                lineData.append(nowRow[cellIndex].value)
+        dataSet.append(lineData)
+    return labels,dataSet
 
 def genCreatTableSQL(labels,DBName):
     cols=["UID TEXT"]
